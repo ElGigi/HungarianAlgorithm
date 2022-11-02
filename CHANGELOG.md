@@ -1,0 +1,18 @@
+# Change Log
+
+All notable changes to this project will be documented in this file. This project adheres
+to [Semantic Versioning] (http://semver.org/). For change log format,
+use [Keep a Changelog] (http://keepachangelog.com/).
+
+## [1.0.0] - In progress
+
+### Added
+
+- Add `PHPUnit` for tests
+
+### Changed
+
+- Bump minimum PHP compatibility to **8.0**
+- Cleanup code
+- Force square of matrix with 0, result is purged of additional data
+- Accept `INF` as value
