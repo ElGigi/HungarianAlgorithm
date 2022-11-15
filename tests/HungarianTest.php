@@ -15,25 +15,27 @@ use PHPUnit\Framework\TestCase;
 
 class HungarianTest extends TestCase
 {
+    public const DEFAULT_MATRIX = [
+        'matrix' => [
+            [1, 2, 3, 0, 1],
+            [0, 2, 3, 12, 1],
+            [3, 0, 1, 13, 1],
+            [3, 1, 1, 12, 0],
+            [3, 1, 1, 12, 0],
+        ],
+        'expected' => [
+            0 => 3,
+            1 => 0,
+            2 => 1,
+            4 => 2,
+            3 => 4,
+        ],
+    ];
+
     public function solveProvider(): array
     {
         return [
-            [
-                'matrix' => [
-                    [1, 2, 3, 0, 1],
-                    [0, 2, 3, 12, 1],
-                    [3, 0, 1, 13, 1],
-                    [3, 1, 1, 12, 0],
-                    [3, 1, 1, 12, 0],
-                ],
-                'expected' => [
-                    0 => 3,
-                    1 => 0,
-                    2 => 1,
-                    4 => 2,
-                    3 => 4,
-                ],
-            ],
+            static::DEFAULT_MATRIX,
             [
                 'matrix' => [
                     [0, 2, 0, 0, 1],
@@ -153,6 +155,17 @@ class HungarianTest extends TestCase
                     0 => 0,
                 ],
             ],
+//            [
+//                'matrix' => [
+//                    [10, 2, INF, 15],
+//                    [15, INF, INF, 0],
+//                    [0, INF, INF, 0],
+//                    [0, INF, INF, 0],
+//                ],
+//                'expected' => [
+//                    0 => 0,
+//                ],
+//            ],
         ];
     }
 
@@ -164,5 +177,25 @@ class HungarianTest extends TestCase
         $algo = new Hungarian($matrix);
 
         $this->assertEquals($expected, $algo->solve());
+    }
+
+    public function testDebug()
+    {
+        $algo = new Hungarian(static::DEFAULT_MATRIX['matrix']);
+
+        ob_start();
+        $algo->solve();
+        $output = ob_get_contents();
+        ob_end_clean();
+
+        $this->assertEmpty($output);
+
+        ob_start();
+        $algo->debug();
+        $algo->solve();
+        $output = ob_get_contents();
+        ob_end_clean();
+
+        $this->assertNotEmpty($output);
     }
 }

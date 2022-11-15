@@ -16,6 +16,8 @@ use LogicException;
 
 class Hungarian
 {
+    private bool $debug = false;
+
     /** The assignment cost matrix to be minimised */
     public array $matrix = [];
 
@@ -39,6 +41,18 @@ class Hungarian
         $this->assertValid($matrix);
         $this->matrix = $matrix;
         $this->reduced = $this->forceSquare($matrix);
+    }
+
+    /**
+     * Toggle debug mode.
+     *
+     * @param bool $debug
+     *
+     * @return void
+     */
+    public function debug(bool $debug = true): void
+    {
+        $this->debug = $debug;
     }
 
     public function assertValid(array $matrix): void
@@ -126,7 +140,6 @@ class Hungarian
         }
 
         $transposed = array_map(null, ...$this->reduced);
-        $tmp = $this->reduced;
 
         /*
          * Reduces all columns of the matrix
@@ -246,9 +259,9 @@ class Hungarian
         return $non_covered_zero_matrix;
     }
 
-    public function solve($print = false)
+    public function solve(): array
     {
-        $print && $this->printMatrix($this->matrix, 'Original cost matrix:');
+        $this->printMatrix($this->matrix, 'Original cost matrix:');
         /*
          * Preliminary Steps:
          *  -  Generate reduced matrix
@@ -257,7 +270,7 @@ class Hungarian
          *     - Cover column of starred zero
          */
         $this->reduce();
-        $print && $this->printMatrix($this->reduced, 'Reduced cost matrix:');
+        $this->printMatrix($this->reduced, 'Reduced cost matrix:');
         foreach ($this->reduced as $row => $cells) {
             $columns = array_diff(array_keys($cells, 0, true), $this->covered['column']);
             if (isset($columns[0])) {
@@ -265,7 +278,7 @@ class Hungarian
                 $this->covered['column'][] = $columns[0];
             }
         }
-        $print && $this->printMatrix($this->reduced, 'Final preliminary reduced cost matrix:');
+        $this->printMatrix($this->reduced, 'Final preliminary reduced cost matrix:');
 
         /*
          * Generate zero matrix
@@ -356,7 +369,7 @@ class Hungarian
                 }
             }
 
-            $print && $this->printMatrix($this->reduced, 'Reduced cost matrix of non-covered zero iteration:');
+            $this->printMatrix($this->reduced, 'Reduced cost matrix of non-covered zero iteration:');
 
             $zero_matrix = $this->getZeroMatrix();
             $non_covered_zero_matrix = $this->getNonCoveredZeroMatrix($zero_matrix);
@@ -423,8 +436,21 @@ class Hungarian
         goto start;
     }
 
-    public function printMatrix(array $matrix, $title = null): void
+    /**
+     * Print matrix (only if debug mode is enabled).
+     *
+     * @param array $matrix
+     * @param string|null $title
+     *
+     * @return void
+     */
+    public function printMatrix(array $matrix, ?string $title = null): void
     {
+        // Debug disabled?
+        if (false === $this->debug) {
+            return;
+        }
+
         if (!is_null($title)) {
             printf("\n" . $title);
         }

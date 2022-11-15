@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. This projec
 to [Semantic Versioning] (http://semver.org/). For change log format,
 use [Keep a Changelog] (http://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- Add method `Hungarian::debug(bool $debug = true): void` to enable debug mode
+
+### Removed
+
+- Parameter `$print` on `Hungarian::solve()` method
+
 ## [1.0.0] - 2022-11-15
 
 ### Added
