@@ -10,6 +10,10 @@ use [Keep a Changelog] (http://keepachangelog.com/).
 
 - Add method `Hungarian::debug(bool $debug = true): void` to enable debug mode
 
+### Changed
+
+- Exit script if non-covered are only `INF`
+
 ### Removed
 
 - Parameter `$print` on `Hungarian::solve()` method

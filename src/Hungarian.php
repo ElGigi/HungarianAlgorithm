@@ -62,14 +62,17 @@ class Hungarian
         }
 
         foreach ($matrix as $key => $row) {
-            if (count($row) !== count(array_intersect_key($row, ...$matrix))) {
-                throw new LogicException(
-                    sprintf(
-                        'Column keys of row %u do not correspond to the column keys found in the rest of the matrix.',
-                        $key
-                    )
-                );
+            if (count($row) === count(array_intersect_key($row, ...$matrix))) {
+                continue;
             }
+
+            throw new LogicException(
+                sprintf(
+                    'Column keys of row %u do not correspond to ' .
+                    'the column keys found in the rest of the matrix.',
+                    $key
+                )
+            );
         }
     }
 
@@ -106,23 +109,6 @@ class Hungarian
         return $matrix;
     }
 
-    /**
-     * Reduce matrix to initial size.
-     *
-     * @param array $matrix
-     *
-     * @return array
-     */
-    public function reduceToInitialSize(array $matrix): array
-    {
-        list($x, $y) = $this->getMatrixSize($matrix);
-
-        $matrix = array_slice($matrix, 0, $y);
-        $matrix = array_map(fn($row) => array_slice($row, 0, $x), $matrix);
-
-        return $matrix;
-    }
-
     /*
      * Reduces the cost matrix
      */
@@ -132,10 +118,12 @@ class Hungarian
          * Reduces all rows of the matrix
          */
         foreach ($this->reduced as $row => $cells) {
-            if (($min = min($cells)) !== INF) {
-                foreach ($cells as $column => $cell) {
-                    $this->reduced[$row][$column] -= $min;
-                }
+            if (($min = min((array)$cells)) === INF) {
+                continue;
+            }
+
+            foreach ($cells as $column => $cell) {
+                $this->reduced[$row][$column] -= $min;
             }
         }
 
@@ -145,10 +133,12 @@ class Hungarian
          * Reduces all columns of the matrix
          */
         foreach ($transposed as $column => $cells) {
-            if (($min = min((array)$cells)) !== INF) {
-                foreach ((array)$cells as $row => $cell) {
-                    $this->reduced[$row][$column] -= $min;
-                }
+            if (($min = min((array)$cells)) === INF) {
+                continue;
+            }
+
+            foreach ((array)$cells as $row => $cell) {
+                $this->reduced[$row][$column] -= $min;
             }
         }
     }
@@ -223,45 +213,50 @@ class Hungarian
     public function getZeroMatrix(): array
     {
         $zeros = [];
+
         foreach ($this->reduced as $row => $cells) {
             $zeros[$row] = array_keys($cells, 0, true);
         }
+
         return $zeros;
     }
 
     public function getCoveredZeroMatrix($zero_matrix): array
     {
         $covered_zero_matrix = [];
+
         foreach ($zero_matrix as $row => $cells) {
             foreach ($cells as $column) {
-                if (in_array($row, $this->covered['row'], true) || in_array($column, $this->covered['column'], true)) {
+                if (in_array($row, $this->covered['row'], true) ||
+                    in_array($column, $this->covered['column'], true)) {
                     $covered_zero_matrix[$row][] = $column;
                 }
             }
         }
+
         return $covered_zero_matrix;
     }
 
     public function getNonCoveredZeroMatrix($zero_matrix): array
     {
         $non_covered_zero_matrix = [];
+
         foreach ($zero_matrix as $row => $cells) {
             foreach ($cells as $column) {
-                if (!in_array($row, $this->covered['row'], true) && !in_array(
-                        $column,
-                        $this->covered['column'],
-                        true
-                    )) {
+                if (!in_array($row, $this->covered['row'], true) &&
+                    !in_array($column, $this->covered['column'], true)) {
                     $non_covered_zero_matrix[$row][] = $column;
                 }
             }
         }
+
         return $non_covered_zero_matrix;
     }
 
     public function solve(): array
     {
         $this->printMatrix($this->matrix, 'Original cost matrix:');
+
         /*
          * Preliminary Steps:
          *  -  Generate reduced matrix
@@ -271,8 +266,13 @@ class Hungarian
          */
         $this->reduce();
         $this->printMatrix($this->reduced, 'Reduced cost matrix:');
+
         foreach ($this->reduced as $row => $cells) {
-            $columns = array_diff(array_keys($cells, 0, true), $this->covered['column']);
+            $columns = array_diff(
+                array_keys($cells, 0, true),
+                $this->covered['column']
+            );
+
             if (isset($columns[0])) {
                 $this->addStar($row, $columns[0]);
                 $this->covered['column'][] = $columns[0];
@@ -378,10 +378,11 @@ class Hungarian
         /*
          * Step 3:
          *  -  If the number of covered columns is equal to the number of rows/columns of the cost matrix
-         *     - The currently starred zeros show the optimal solution
+         *  - The currently starred zeros show the optimal solution
          *
          */
         if (count($this->covered['column']) + count($this->covered['row']) === count($this->reduced)) {
+            optimal:
             list($x, $y) = $this->getMatrixSize($this->matrix);
 
             return array_filter(
@@ -398,21 +399,19 @@ class Hungarian
         $twice_covered_reduced_matrix = [];
         foreach ($this->reduced as $row => $cells) {
             foreach ($cells as $column => $cell) {
-                if (!in_array($row, $this->covered['row'], true) && !in_array(
-                        $column,
-                        $this->covered['column'],
-                        true
-                    )) {
+                if (!in_array($row, $this->covered['row'], true) &&
+                    !in_array($column, $this->covered['column'], true)) {
                     $non_covered_reduced_matrix[$row][$column] = $cell;
-                } elseif (in_array($row, $this->covered['row'], true) && in_array(
-                        $column,
-                        $this->covered['column'],
-                        true
-                    )) {
-                    $twice_covered_reduced_matrix[$row][$column] = $cell;
-                } else {
-                    $once_covered_reduced_matrix[$row][$column] = $cell;
+                    continue;
                 }
+
+                if (in_array($row, $this->covered['row'], true) &&
+                    in_array($column, $this->covered['column'], true)) {
+                    $twice_covered_reduced_matrix[$row][$column] = $cell;
+                    continue;
+                }
+
+                $once_covered_reduced_matrix[$row][$column] = $cell;
             }
         }
 
@@ -422,6 +421,11 @@ class Hungarian
                 $min = ($cell < $min) ? $cell : $min;
             }
         }
+
+        if ($min === INF) {
+            goto optimal;
+        }
+
         foreach ($non_covered_reduced_matrix as $row => $cells) {
             foreach ($cells as $column => $cell) {
                 $this->reduced[$row][$column] -= $min;

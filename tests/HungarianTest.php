@@ -155,17 +155,19 @@ class HungarianTest extends TestCase
                     0 => 0,
                 ],
             ],
-//            [
-//                'matrix' => [
-//                    [10, 2, INF, 15],
-//                    [15, INF, INF, 0],
-//                    [0, INF, INF, 0],
-//                    [0, INF, INF, 0],
-//                ],
-//                'expected' => [
-//                    0 => 0,
-//                ],
-//            ],
+            [
+                'matrix' => [
+                    [10, 2, INF, 15],
+                    [15, INF, INF, 2],
+                    [1, INF, INF, 4],
+                    [2, INF, INF, 10],
+                ],
+                'expected' => [
+                    0 => 1,
+                    1 => 3,
+                    2 => 0,
+                ],
+            ],
         ];
     }
 
